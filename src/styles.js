@@ -2,38 +2,8 @@ const TRACK_SIZE = 4;
 const THUMB_SIZE = 20;
 const GREEN = 'green';
 const TRANSPARENT = 'transparent';
-export const defaultStyles: {
-    aboveThumbComponentsContainer: any;
-    belowThumbComponentsContainer: any;
-    container: any;
-    debugThumbTouchArea: {
-        backgroundColor: string;
-        opacity: number;
-        position: 'absolute';
-    };
-    renderThumbComponent: {
-        position: 'absolute';
-    };
-    thumb: {
-        borderRadius: number;
-        height: number;
-        position: 'absolute';
-        width: number;
-    };
-    touchArea: {
-        backgroundColor: string;
-        bottom: number;
-        left: number;
-        position: 'absolute';
-        right: number;
-        top: number;
-    };
-    track: {borderRadius: number; height: number};
-} = {
+export const defaultStyles = {
     aboveThumbComponentsContainer: {
-        flexDirection: 'row',
-    },
-    belowThumbComponentsContainer: {
         flexDirection: 'row',
     },
     container: {
@@ -67,3 +37,4 @@ export const defaultStyles: {
         height: TRACK_SIZE,
     },
 };
+//# sourceMappingURL=styles.js.map

@@ -1,0 +1,228 @@
+diff --git a/node_modules/@miblanchard/react-native-slider/lib/index.d.ts b/node_modules/@miblanchard/react-native-slider/lib/index.d.ts
+index e32f8fd..91974ed 100644
+--- a/node_modules/@miblanchard/react-native-slider/lib/index.d.ts
++++ b/node_modules/@miblanchard/react-native-slider/lib/index.d.ts
+@@ -16,14 +16,17 @@ export declare class Slider extends PureComponent<SliderProps, SliderState> {
+         debugTouchArea: boolean;
+         trackMarks: never[];
+         maximumTrackTintColor: string;
+-        maximumValue: number;
+         minimumTrackTintColor: string;
+-        minimumValue: number;
+         step: number;
+         thumbTintColor: string;
+         trackClickable: boolean;
+         value: number;
+         vertical: boolean;
++        disabledIndexes: number[];
++        minimumTrackValue: number;
++        maximumTrackValue: number;
++        minimumSelectableValue?: number;
++        maximumSelectableValue?:number;
+     };
+     static getDerivedStateFromProps(props: SliderProps, state: SliderState): SliderState | undefined;
+     componentDidUpdate(): void;
+diff --git a/node_modules/@miblanchard/react-native-slider/lib/index.js b/node_modules/@miblanchard/react-native-slider/lib/index.js
+index 074bd84..fe3a541 100644
+--- a/node_modules/@miblanchard/react-native-slider/lib/index.js
++++ b/node_modules/@miblanchard/react-native-slider/lib/index.js
+@@ -36,8 +36,8 @@ const normalizeValue = (props, value) => {
+     if (!value || (Array.isArray(value) && value.length === 0)) {
+         return [0];
+     }
+-    const { maximumValue, minimumValue } = props;
+-    const getBetweenValue = (inputValue) => Math.max(Math.min(inputValue, maximumValue), minimumValue);
++    const { maximumTrackValue, minimumTrackValue } = props;
++    const getBetweenValue = (inputValue) => Math.max(Math.min(inputValue, maximumTrackValue), minimumTrackValue);
+     if (!Array.isArray(value)) {
+         return [getBetweenValue(value)];
+     }
+@@ -113,14 +113,17 @@ export class Slider extends PureComponent {
+         debugTouchArea: false,
+         trackMarks: [],
+         maximumTrackTintColor: '#b3b3b3',
+-        maximumValue: 1,
++        maximumTrackValue: 1,
++        maximumSelectableValue: null,
+         minimumTrackTintColor: '#3f3f3f',
+-        minimumValue: 0,
++        minimumTrackValue: 0,
++        minimumSelectableValue: null,
+         step: 0,
+         thumbTintColor: '#343434',
+         trackClickable: true,
+         value: 0,
+         vertical: false,
++        disabledIndexes: [],
+     };
+     static getDerivedStateFromProps(props, state) {
+         if (props.trackMarks &&
+@@ -173,27 +176,60 @@ export class Slider extends PureComponent {
+         this.props?.onSlidingStart?.(this._getRawValues(this.state.values));
+     };
+     _handlePanResponderMove = (_e, gestureState) => {
+-        if (this.props.disabled) {
++        if (this.props.disabled || this.props.disabledIndexes.includes(this._activeThumbIndex)) {
+             return;
+         }
+-        this._setCurrentValue(this._getValue(gestureState), this._activeThumbIndex, () => {
+-            this.props?.onValueChange?.(this._getRawValues(this.state.values));
+-        });
++        let newValues = this._getRawValues(this.state.values)
++        if((this.props.minimumSelectableValue && newValues[0] <= this.props.minimumSelectableValue) || 
++          (this.props.maximumSelectableValue && newValues[1] >= this.props.maximumSelectableValue)) {
++          if(this.props.minimumSelectableValue > newValues[0]) {
++            newValues[0] = this.props.minimumSelectableValue
++          }
++          if(this.props.maximumSelectableValue < newValues[1]) {
++            newValues[1] = this.props.maximumSelectableValue
++          }
++          this._setCurrentValue(this._getValue(gestureState), this._activeThumbIndex, () => {
++              this.props?.onValueChange?.(newValues);
++          });
++        } else {
++            this._setCurrentValue(this._getValue(gestureState), this._activeThumbIndex, () => {
++              this.props?.onValueChange?.(this._getRawValues(this.state.values));
++            });
++        }
+     };
+     _handlePanResponderRequestEnd = () => {
+         // Should we allow another component to take over this pan?
+         return false;
+     };
+     _handlePanResponderEnd = (_e, gestureState) => {
+-        if (this.props.disabled) {
++        if (this.props.disabled || this.props.disabledIndexes.includes(this._activeThumbIndex)) {
+             return;
+         }
+-        this._setCurrentValue(this._getValue(gestureState), this._activeThumbIndex, () => {
++        let newValues = this._getRawValues(this.state.values)
++        if((this.props.minimumSelectableValue && newValues[0] <= this.props.minimumSelectableValue) || 
++          (this.props.maximumSelectableValue && newValues[1] >= this.props.maximumSelectableValue)) {
++          if(this.props.minimumSelectableValue > newValues[0]) {
++            newValues[0] = this.props.minimumSelectableValue
++          }
++          if(this.props.maximumSelectableValue < newValues[1]) {
++            newValues[1] = this.props.maximumSelectableValue
++          }
++          this._setCurrentValue(newValues[0], 0, () => {
++            this.props?.onValueChange?.(newValues);
++            this.props?.onSlidingComplete?.(newValues);
++          });
++          this._setCurrentValue(newValues[0], 0, () => {
++            this.props?.onValueChange?.(newValues);
++            this.props?.onSlidingComplete?.(newValues);
++          });
++        } else {
++            this._setCurrentValue(this._getValue(gestureState), this._activeThumbIndex, () => {
+             if (this.props.trackClickable) {
+                 this.props?.onValueChange?.(this._getRawValues(this.state.values));
+             }
+             this.props?.onSlidingComplete?.(this._getRawValues(this.state.values));
+-        });
++          });
++        }
+         this._activeThumbIndex = 0;
+     };
+     _measureContainer = (e) => {
+@@ -227,8 +263,8 @@ export class Slider extends PureComponent {
+         }
+     };
+     _getRatio = (value) => {
+-        const { maximumValue, minimumValue } = this.props;
+-        return (value - minimumValue) / (maximumValue - minimumValue);
++        const { maximumTrackValue, minimumTrackValue } = this.props;
++        return (value - minimumTrackValue) / (maximumTrackValue - minimumTrackValue);
+     };
+     _getThumbLeft = (value) => {
+         const { containerSize, thumbSize } = this.state;
+@@ -239,13 +275,13 @@ export class Slider extends PureComponent {
+     };
+     _getValue = (gestureState) => {
+         const { containerSize, thumbSize, values } = this.state;
+-        const { maximumValue, minimumValue, step, vertical } = this.props;
++        const { maximumTrackValue, minimumTrackValue, step, vertical } = this.props;
+         const length = containerSize.width - thumbSize.width;
+         const thumbLeft = vertical ? this._previousLeft + (gestureState.dy * -1) : this._previousLeft + gestureState.dx;
+         const nonRtlRatio = thumbLeft / length;
+         const ratio = I18nManager.isRTL ? 1 - nonRtlRatio : nonRtlRatio;
+-        let minValue = minimumValue;
+-        let maxValue = maximumValue;
++        let minValue = minimumTrackValue;
++        let maxValue = maximumTrackValue;
+         const rawValues = this._getRawValues(values);
+         const buffer = step ? step : 0.1;
+         if (values.length === 2) {
+@@ -257,11 +293,11 @@ export class Slider extends PureComponent {
+             }
+         }
+         if (step) {
+-            return Math.max(minValue, Math.min(maxValue, minimumValue +
+-                Math.round((ratio * (maximumValue - minimumValue)) / step) *
++            return Math.max(minValue, Math.min(maxValue, minimumTrackValue +
++                Math.round((ratio * (maximumTrackValue - minimumTrackValue)) / step) *
+                     step));
+         }
+-        return Math.max(minValue, Math.min(maxValue, ratio * (maximumValue - minimumValue) + minimumValue));
++        return Math.max(minValue, Math.min(maxValue, ratio * (maximumTrackValue - minimumTrackValue) + minimumTrackValue));
+     };
+     _getCurrentValue = (thumbIndex = 0) => this.state.values[thumbIndex].__getValue();
+     _setCurrentValue = (value, thumbIndex, callback) => {
+@@ -396,21 +432,21 @@ export class Slider extends PureComponent {
+                 : thumbImage) }));
+     };
+     render() {
+-        const { containerStyle, debugTouchArea, maximumTrackTintColor, maximumValue, minimumTrackTintColor, minimumValue, renderAboveThumbComponent, renderTrackMarkComponent, renderThumbComponent, thumbStyle, thumbTintColor, trackStyle, vertical, ...other } = this.props;
++        const { containerStyle, debugTouchArea, maximumTrackTintColor, maximumTrackValue, minimumTrackTintColor, minimumTrackValue, renderAboveThumbComponent, renderTrackMarkComponent, renderThumbComponent, thumbStyle, thumbTintColor, trackStyle, vertical, ...other } = this.props;
+         const { allMeasured, containerSize, thumbSize, trackMarksValues, values, } = this.state;
+         const interpolatedThumbValues = values.map((value) => value.interpolate({
+-            inputRange: [minimumValue, maximumValue],
++            inputRange: [minimumTrackValue, maximumTrackValue],
+             outputRange: I18nManager.isRTL
+                 ? [0, -(containerSize.width - thumbSize.width)]
+                 : [0, containerSize.width - thumbSize.width],
+         }));
+         const interpolatedTrackValues = values.map((value) => value.interpolate({
+-            inputRange: [minimumValue, maximumValue],
++            inputRange: [minimumTrackValue, maximumTrackValue],
+             outputRange: [0, containerSize.width - thumbSize.width],
+         }));
+         const interpolatedTrackMarksValues = trackMarksValues &&
+             trackMarksValues.map((v) => v.interpolate({
+-                inputRange: [minimumValue, maximumValue],
++                inputRange: [minimumTrackValue, maximumTrackValue],
+                 outputRange: I18nManager.isRTL
+                     ? [0, -(containerSize.width - thumbSize.width)]
+                     : [0, containerSize.width - thumbSize.width],
+diff --git a/node_modules/@miblanchard/react-native-slider/lib/types.d.ts b/node_modules/@miblanchard/react-native-slider/lib/types.d.ts
+index 2426bbd..225ea72 100644
+--- a/node_modules/@miblanchard/react-native-slider/lib/types.d.ts
++++ b/node_modules/@miblanchard/react-native-slider/lib/types.d.ts
+@@ -18,10 +18,13 @@ export declare type SliderProps = {
+     containerStyle?: ViewStyle;
+     debugTouchArea?: boolean;
+     disabled?: boolean;
++    disabledIndexes?: number[];
+     maximumTrackTintColor?: string;
+-    maximumValue: number;
++    maximumTrackValue: number;
++    maximumSelectableValue?: number;
+     minimumTrackTintColor?: string;
+-    minimumValue: number;
++    minimumTrackValue: number;
++    minimumSelectableValue?: number;
+     onSlidingComplete?: SliderOnChangeCallback;
+     onSlidingStart?: SliderOnChangeCallback;
+     onValueChange?: SliderOnChangeCallback;
+@@ -37,6 +40,11 @@ export declare type SliderProps = {
+     trackMarks?: Array<number>;
+     trackStyle?: ViewStyle;
+     value?: Animated.Value | number | Array<number>;
++    /**
++     * Allows the start from the zero value. The minimum value track can be rendered in two directions from zero.
++     * Can be applied only with a single numeric value, negative minimum value, and positive maximum value.
++     */
++    startFromZero?: boolean;
+     vertical?: boolean;
+ };
+ export declare type SliderState = {

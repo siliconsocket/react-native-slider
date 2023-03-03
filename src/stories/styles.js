@@ -1,4 +1,4 @@
-import {StyleSheet} from 'react-native';
+import { StyleSheet } from 'react-native';
 const COLORS = {
     BLACK: 'black',
     WHITE: 'white',
@@ -213,3 +213,4 @@ export const trackMarkStyles = StyleSheet.create({
         left: -borderWidth / 2,
     },
 });
+//# sourceMappingURL=styles.js.map

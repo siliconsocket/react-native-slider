@@ -1,17 +1,14 @@
 import * as React from 'react';
-import {Animated, ImageSourcePropType, ViewStyle} from 'react-native';
-
-export type Dimensions = {
+import { Animated, ImageSourcePropType, ViewStyle } from 'react-native';
+export declare type Dimensions = {
     height: number;
     width: number;
 };
-
 /**
  * Callback for slider change events. The second number value will be only if provided an array with two values in `value` prop
  */
-export type SliderOnChangeCallback = (value: number | Array<number>) => void;
-
-export type SliderProps = {
+declare type SliderOnChangeCallback = (value: number | Array<number>) => void;
+export declare type SliderProps = {
     animateTransitions?: boolean;
     animationConfig?: {
         spring?: Animated.AnimatedProps<ViewStyle>;
@@ -21,24 +18,18 @@ export type SliderProps = {
     containerStyle?: ViewStyle;
     debugTouchArea?: boolean;
     disabled?: boolean;
+    disabledIndexes?: number[];
     maximumTrackTintColor?: string;
-    maximumValue: number;
+    maximumTrackValue: number;
+    maximumSelectableValue?: number;
     minimumTrackTintColor?: string;
-    minimumValue: number;
+    minimumTrackValue: number;
+    minimumSelectableValue?: number;
     onSlidingComplete?: SliderOnChangeCallback;
     onSlidingStart?: SliderOnChangeCallback;
     onValueChange?: SliderOnChangeCallback;
-    renderAboveThumbComponent?: (
-        value: number,
-        index: number,
-    ) => React.ReactNode;
-    renderBelowThumbComponent?: (
-        value: number,
-        index: number,
-    ) => React.ReactNode;
-    renderThumbComponent?: (index: number) => React.ReactNode | Array<() => React.ReactNode>;
-    renderMinimumTrackComponent?: () => React.ReactNode;
-    renderMaximumTrackComponent?: () => React.ReactNode;
+    renderAboveThumbComponent?: (index: number) => React.ReactNode;
+    renderThumbComponent?: () => React.ReactNode;
     renderTrackMarkComponent?: (index: number) => React.ReactNode;
     step?: number;
     thumbImage?: ImageSourcePropType;
@@ -48,8 +39,6 @@ export type SliderProps = {
     trackClickable?: boolean;
     trackMarks?: Array<number>;
     trackStyle?: ViewStyle;
-    minimumTrackStyle?: ViewStyle;
-    maximumTrackStyle?: ViewStyle;
     value?: Animated.Value | number | Array<number>;
     /**
      * Allows the start from the zero value. The minimum value track can be rendered in two directions from zero.
@@ -58,11 +47,11 @@ export type SliderProps = {
     startFromZero?: boolean;
     vertical?: boolean;
 };
-
-export type SliderState = {
+export declare type SliderState = {
     allMeasured: boolean;
     containerSize: Dimensions;
     thumbSize: Dimensions;
     trackMarksValues?: Array<Animated.Value>;
     values: Array<Animated.Value>;
 };
+export {};
